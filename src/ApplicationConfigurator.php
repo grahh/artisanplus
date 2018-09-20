@@ -23,7 +23,7 @@ class ApplicationConfigurator
     public function namespaceToPath(string $namespace):string
     {
         $basens = app()->getNamespace();
-        $regex = '/'.$basens.'\\\/';
+        $regex = '/'.$basens.'\\/';
 
         if(preg_match($regex,$namespace)) {
             $namespace = preg_replace($regex,'',$namespace);
