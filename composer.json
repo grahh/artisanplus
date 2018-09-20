@@ -1,0 +1,19 @@
+{
+    "name": "grahh/artisanplus",
+    "description": "artisan commands",
+    "type": "laravel",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "grahh",
+            "email": "grahh93@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Grahh\\Artisanplus\\": "src/"
+        }
+    }
+}
