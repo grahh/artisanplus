@@ -20,6 +20,7 @@ artisan commands package.
 php artisan make:repository User --namespace="One\Two"
 will create UserRepository.php in app_path(your/config/path/One/Two)
 
+### make:service
 
 php artisan make:service Service --namespace="One\Two"
 will create ServiceRepository.php in app_path(your/config/path/One/Two)
