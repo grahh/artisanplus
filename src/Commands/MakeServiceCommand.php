@@ -117,6 +117,7 @@ SERVICE;
 
             if(!File::exists(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"))) {
                 File::put(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"),$content);
+                return;
             } else {
                 dd('file exists');
             }
@@ -128,6 +129,7 @@ SERVICE;
 
             if(!File::exists(app_path($this->path . "/" . $this->serviceName . ".php"))) {
                 File::put(app_path($this->path . "/" . $this->serviceName . ".php"), $content);
+                return;
             } else {
                 dd('file exists');
             }
