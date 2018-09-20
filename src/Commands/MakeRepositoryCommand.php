@@ -103,18 +103,32 @@ class $this->repoName extends BaseRepository
 }
 REPO;
 
-        if(isset($additional_path)) {
-            if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
-                File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
-            }
+        try {
+            if(isset($additional_path)) {
+                if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
+                    File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
+                }
 
-            File::put(app_path($this->path."/".$additional_path."/".$this->repoName.".php"),$content);
-        } else {
-            if(!File::isDirectory(app_path($this->path))) {
-                File::makeDirectory(app_path($this->path),0755,true);
-            }
+                if(!File::exists(app_path($this->path."/".$additional_path."/".$this->repoName.".php"))) {
+                    File::put(app_path($this->path."/".$additional_path."/".$this->repoName.".php"),$content);
+                } else {
+                    throw new \Exception('file %s exists',$this->repoName.".php");
+                }
+            } else {
+                if(!File::isDirectory(app_path($this->path))) {
+                    File::makeDirectory(app_path($this->path),0755,true);
+                }
 
-            File::put(app_path($this->path."/".$this->repoName.".php"),$content);
+                if(!File::exists(app_path($this->path."/".$this->repoName.".php"))) {
+                    File::put(app_path($this->path . "/" . $this->repoName . ".php"), $content);
+                } else {
+                    throw new \Exception('file %s exists',$this->repoName.".php");
+                }
+            }
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            die();
         }
+
     }
 }

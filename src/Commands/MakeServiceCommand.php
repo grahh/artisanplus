@@ -110,31 +110,34 @@ class $this->serviceName extends BaseService implements ShouldReturnView
 }
 SERVICE;
 
-        if(isset($additional_path)) {
-            if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
-                File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
-            }
+        try {
+            if(isset($additional_path)) {
+                if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
+                    File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
+                }
 
-            if(!File::exists(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"))) {
-                File::put(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"),$content);
-                return;
+                if(!File::exists(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"))) {
+                    File::put(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"),$content);
+                    die();
+                } else {
+                    throw new \Exception(sprintf('file %s exists',$this->serviceName.".php"));
+                }
+
             } else {
-                dd('file exists');
-            }
+                if(!File::isDirectory(app_path($this->path))) {
+                    File::makeDirectory(app_path($this->path),0755,true);
+                }
 
-        } else {
-            if(!File::isDirectory(app_path($this->path))) {
-                File::makeDirectory(app_path($this->path),0755,true);
+                if(!File::exists(app_path($this->path . "/" . $this->serviceName . ".php"))) {
+                    File::put(app_path($this->path . "/" . $this->serviceName . ".php"), $content);
+                    die();
+                } else {
+                    throw new \Exception(sprintf('file %s exists',$this->serviceName.".php"));
+                }
             }
-
-            if(!File::exists(app_path($this->path . "/" . $this->serviceName . ".php"))) {
-                File::put(app_path($this->path . "/" . $this->serviceName . ".php"), $content);
-                return;
-            } else {
-                dd('file exists');
-            }
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            die();
         }
-
-        dd('error. Not finished');
     }
 }
