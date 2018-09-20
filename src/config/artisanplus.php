@@ -1,5 +1,8 @@
 <?php
 
+$app_namespace = app()->getNamespace();
+$app_namespace = preg_replace('/\\\/','',$app_namespace);
+
 return [
     'commands' => [
         \Grahh\Artisanplus\Commands\MakeRepositoryCommand::class,
@@ -7,8 +10,8 @@ return [
     ],
 
     'namespaces' => [
-        'models' => "App",
-        'repositories' => "App\\Repositories",
-        'services' => "App\\Services",
+        'models' => $app_namespace,
+        'repositories' => $app_namespace."\\Repositories",
+        'services' => $app_namespace."\\Services",
     ]
 ];
