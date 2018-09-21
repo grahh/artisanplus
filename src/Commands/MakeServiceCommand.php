@@ -20,7 +20,7 @@ class MakeServiceCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:service {name : Service name that will be postfixed as *Service.php} {?--namespace= : If you need to change namespace and create file somewhere far from config directory use namespace}';
+    protected $signature = 'make:service {name : Service name that will be postfixed as *Service.php}';
 
     /**
      * The console command description.
@@ -36,17 +36,7 @@ class MakeServiceCommand extends Command
      */
     public function __construct()
     {
-        $conf = app()->make(ApplicationConfigurator::class);
-        $path = $conf->namespaceToPath( config('artisanplus.namespaces.services') );
-
-        if($path) {
-            $conf->setServicesPath($path);
-        } else {
-            $conf->setServicesPath();
-        }
-
-        $this->path = $conf->getServicesPath();
-        $this->conf = $conf;
+        $this->conf = app()->make(ApplicationConfigurator::class);
         parent::__construct();
     }
 
@@ -57,33 +47,37 @@ class MakeServiceCommand extends Command
      */
     public function handle()
     {
-        if($this->option('namespace')) {
-            $this->namespace = $this->conf
-                ->prepareNamespace($this->option('namespace'));
-        }
+        $name = $this->argument('name');
+        $name = str_replace("\\",'/',$name);
+        //now we have One/Two/Three string
 
-        $this->serviceName = Str::studly($this->argument('name'))."Service";
+        $base_namespace = config('artisanplus.namespaces.services');
+        $base_path = app_path($this->conf->namespaceToPath($base_namespace));
+
+        $name = collect(explode('/',$name));
+
+        if($name->count() > 1) {
+            $pop = $name->pop();
+            $this->namespace = $base_namespace."\\".$this->conf->pathToNamespace($name->implode('/'));
+            $this->path = $base_path."/".$name->implode('/');
+        } else {
+            $this->namespace = $base_namespace;
+            $this->path = $base_path."/";
+        }
+        $this->serviceName = isset($pop) ? $pop."Service" : $name->last()."Service";
         $this->generateService();
     }
 
     protected function generateService()
     {
-        if($this->namespace) {
-            $additional_path = $this->conf->namespaceToPath($this->namespace);
-            $serviceNamespace = config('artisanplus.namespaces.services')."\\".$this->namespace;
-        } else {
-            $serviceNamespace = config('artisanplus.namespaces.services');
-        }
-
         $content = <<<SERVICE
 <?php
 
-namespace $serviceNamespace;
+namespace $this->namespace;
 
 use \Grahh\Artisanplus\Base\BaseService;
 use \Grahh\Artisanplus\Contracts\ShouldReturnView;
 use Illuminate\View\View;
-use Illuminate\Support\Collection;
 
 class $this->serviceName extends BaseService implements ShouldReturnView
 {
@@ -109,31 +103,16 @@ class $this->serviceName extends BaseService implements ShouldReturnView
     }
 }
 SERVICE;
-
         try {
-            if(isset($additional_path)) {
-                if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
-                    File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
-                }
+            if(!File::isDirectory($this->path)) {
+                File::makeDirectory($this->path,0755,true);
+            }
 
-                if(!File::exists(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"))) {
-                    File::put(app_path($this->path."/".$additional_path."/".$this->serviceName.".php"),$content);
-                    die();
-                } else {
-                    throw new \Exception(sprintf('file %s exists',$this->serviceName.".php"));
-                }
-
+            if(!File::exists($this->path.'/'.$this->serviceName.".php")) {
+                File::put($this->path.'/'.$this->serviceName.".php",$content);
+                die();
             } else {
-                if(!File::isDirectory(app_path($this->path))) {
-                    File::makeDirectory(app_path($this->path),0755,true);
-                }
-
-                if(!File::exists(app_path($this->path . "/" . $this->serviceName . ".php"))) {
-                    File::put(app_path($this->path . "/" . $this->serviceName . ".php"), $content);
-                    die();
-                } else {
-                    throw new \Exception(sprintf('file %s exists',$this->serviceName.".php"));
-                }
+                throw new \Exception(sprintf("file %s exists \r\n",$this->serviceName.".php"));
             }
         } catch (\Exception $e) {
             echo $e->getMessage();

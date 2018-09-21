@@ -10,8 +10,8 @@ use Illuminate\Support\Str;
 
 class MakeRepositoryCommand extends Command
 {
-    public $model_path;
     public $conf;
+    public $modelPath;
     public $path;
     public $namespacedModel;
     public $modelName;
@@ -23,7 +23,7 @@ class MakeRepositoryCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:repository {model : Provide and existing model name} {?--namespace= : If you need to change namespace and create file somewhere far from config directory use namespace}';
+    protected $signature = 'make:repository {model : Provide and existing model name} {?--folder= : Provide path from config path}';
 
     /**
      * The console command description.
@@ -39,17 +39,7 @@ class MakeRepositoryCommand extends Command
      */
     public function __construct()
     {
-        $conf = app()->make(ApplicationConfigurator::class);
-        $path = $conf->namespaceToPath(config('artisanplus.namespaces.repositories'));
-
-        if($path) {
-            $conf->setRepositoriesPath($path);
-        } else {
-            $conf->setRepositoriesPath();
-        }
-
-        $this->path = $conf->getRepositoriesPath();
-        $this->conf = $conf;
+        $this->conf = app()->make(ApplicationConfigurator::class);
         parent::__construct();
     }
 
@@ -60,36 +50,45 @@ class MakeRepositoryCommand extends Command
      */
     public function handle()
     {
-        if($this->option('namespace')) {
-            $this->namespace = $this->conf
-                ->prepareNamespace($this->option('namespace'));
-        }
+        try {
+            $model = Str::ucfirst($this->argument('model'));
+            $repositoryFolder = $this->option('folder');
 
-        $model = $this->argument('model');
-        if(preg_match('/[-_]/',$model)) {
-            $model = Str::studly($model);
-        } else {
-            $model = Str::ucfirst($model);
+            $base_repo_namespace = config('artisanplus.namespaces.repositories');
+            $base_repo_path = app_path($this->conf->namespaceToPath($base_repo_namespace));
+
+            if($repositoryFolder) {
+                $repositoryPath = $base_repo_path."/". $repositoryFolder;
+                $repositoryNamespace = $base_repo_namespace."\\".$this->conf->pathToNamespace($repositoryFolder);
+            } else {
+                $repositoryPath = $base_repo_path;
+                $repositoryNamespace = $base_repo_namespace;
+            }
+
+            $this->path = $repositoryPath;
+            $this->namespace = $repositoryNamespace;
+
+            $this->repoName = $model . "Repository";
+            $this->modelName = $model;
+            $this->namespacedModel = config('artisanplus.namespaces.models') . "\\" . $model;
+            $this->modelPath = app_path($this->conf->namespaceToPath($this->namespacedModel).".php");
+            if(File::exists($this->modelPath)) {
+                $this->generateRepository();
+            } else {
+                throw new \Exception(sprintf("model %s does not exists \r\n",$this->modelName));
+            }
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            die();
         }
-        $this->repoName = $model . "Repository";
-        $this->modelName = $model;
-        $this->namespacedModel = config('artisanplus.namespaces.models') . "\\" . $model;
-        $this->generateRepository();
     }
 
     protected function generateRepository()
     {
-        if($this->namespace) {
-            $additional_path = $this->conf->namespaceToPath($this->namespace);
-            $repositoryNamespace = config('artisanplus.namespaces.repositories')."\\".$this->namespace;
-        } else {
-            $repositoryNamespace = config('artisanplus.namespaces.repositories');
-        }
-
         $content = <<<REPO
 <?php
 
-namespace $repositoryNamespace;
+namespace $this->namespace;
 
 use $this->namespacedModel;
 use Grahh\Artisanplus\Base\BaseRepository;
@@ -104,26 +103,14 @@ class $this->repoName extends BaseRepository
 REPO;
 
         try {
-            if(isset($additional_path)) {
-                if(!File::isDirectory(app_path($this->path)."/".$additional_path)) {
-                    File::makeDirectory(app_path($this->path."/".$additional_path),0755,true);
-                }
+            if(!File::isDirectory($this->path)) {
+                File::makeDirectory($this->path,0755,true);
+            }
 
-                if(!File::exists(app_path($this->path."/".$additional_path."/".$this->repoName.".php"))) {
-                    File::put(app_path($this->path."/".$additional_path."/".$this->repoName.".php"),$content);
-                } else {
-                    throw new \Exception('file %s exists',$this->repoName.".php");
-                }
+            if(!File::exists($this->path."/".$this->repoName.".php")) {
+                File::put($this->path."/".$this->repoName.".php",$content);
             } else {
-                if(!File::isDirectory(app_path($this->path))) {
-                    File::makeDirectory(app_path($this->path),0755,true);
-                }
-
-                if(!File::exists(app_path($this->path."/".$this->repoName.".php"))) {
-                    File::put(app_path($this->path . "/" . $this->repoName . ".php"), $content);
-                } else {
-                    throw new \Exception('file %s exists',$this->repoName.".php");
-                }
+                throw new \Exception(sprintf("file %s exists \r\n",$this->repoName.".php"));
             }
         } catch (\Exception $e) {
             echo $e->getMessage();
