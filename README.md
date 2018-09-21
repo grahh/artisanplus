@@ -2,12 +2,11 @@
 artisan commands package.
 
 ## Commands list:
-* php artisan make:repository {Model} {?--namespace=}
+* php artisan make:repository {Model} 
   * required argument Model
-  * optional parameter namespace which will create additional namespace postfix after default config postfix
-* php artisan make:service {Name} {?--namespace=}
+* php artisan make:service {Name} {?--folder=}
   * required argument Name
-  * optional parameter namespace which will create additional namespace postfix after default config postfix
+  * optional parameter folder which will create additional namespace postfix after default config postfix and move file there
  
 ## Configs
   * commands - list of commands mentioned by listing of class names
@@ -17,14 +16,13 @@ artisan commands package.
 
 ### make:repository
 
-php artisan make:repository User --namespace="One\Two"
+php artisan make:repository User --folder=One/Two
 will create UserRepository.php in app_path(your/config/path/One/Two)
 
 ### make:service
 
-php artisan make:service Service --namespace="One\Two"
-will create ServiceRepository.php in app_path(your/config/path/One/Two)
+php artisan make:service Service
+will create ServiceRepository.php in app_path(your/config/path/)
 
-## Caution
-
-* don't miss quotes after --namespace=. always put them if namespace contains >1 word because windows will eat it and linux will parse as OneTwo if you will put One\Two 
+and php artisan make:service One/Two/Service
+will create ServiceRepository.php in app_path(your/config/path/One/Two/)
